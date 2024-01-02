@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -42,6 +43,10 @@ public class Episode {
 
     @Transient
     private String urlEndpoint;
+
+    public String getUrlEndpoint() {
+       return ServletUriComponentsBuilder.fromCurrentRequest().build().toUriString() + "/" + getId();
+    }
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
