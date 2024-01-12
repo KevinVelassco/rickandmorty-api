@@ -1,5 +1,6 @@
 package com.app.rickandmorty.modules.episode;
 
+import com.app.rickandmorty.modules.episodecharacter.EpisodeCharacter;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,6 +12,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Builder
 @Data
@@ -45,7 +47,7 @@ public class Episode {
     private String urlEndpoint;
 
     public String getUrlEndpoint() {
-       return ServletUriComponentsBuilder.fromCurrentRequest().build().toUriString() + "/" + getId();
+       return ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString() + "/api/episode/" + getId();
     }
 
     @CreationTimestamp
@@ -55,4 +57,7 @@ public class Episode {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @OneToMany(mappedBy = "episode")
+    private List<EpisodeCharacter> episodeCharacter;
 }
