@@ -1,8 +1,10 @@
 package com.app.rickandmorty.config;
 
-
 import com.app.rickandmorty.common.exceptions.*;
+import com.app.rickandmorty.utils.handledatabaseexception.DatabaseExceptionResponse;
+import com.app.rickandmorty.utils.handledatabaseexception.HandleResponseFromDatabaseException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -10,6 +12,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
+
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -189,8 +193,37 @@ public class ErrorHandlerConfig {
                 exception.getStatus());
     }
 
+    @ExceptionHandler(DataAccessException.class)
+    public ResponseEntity<ApiErrorResponse> handleException(DataAccessException exception,
+                                                            WebRequest request) {
+
+        Throwable rootCause = exception.getRootCause();
+
+        if(!(rootCause instanceof SQLException sqlException)){
+            return this.handleGenericException(exception, request);
+        }
+
+        DatabaseExceptionResponse databaseExceptionResponse = HandleResponseFromDatabaseException.response(sqlException);
+
+        if(databaseExceptionResponse == null) {
+            return this.handleGenericException(exception, request);
+        }
+
+        ApiErrorResponse apiErrorResponse = ApiErrorResponse
+                .builder()
+                .statusCode(databaseExceptionResponse.statusCode().value())
+                .error(databaseExceptionResponse.statusCode().getReasonPhrase())
+                .message(databaseExceptionResponse.message())
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        return new ResponseEntity<>(
+                apiErrorResponse,
+                databaseExceptionResponse.statusCode());
+    }
+
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiErrorResponse> handleException(Exception exception,
+    public ResponseEntity<ApiErrorResponse> handleGenericException(Exception exception,
                                                     WebRequest request) {
 
         log.error(exception.getMessage(), exception);
@@ -199,7 +232,7 @@ public class ErrorHandlerConfig {
                 .builder()
                 .statusCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
                 .error(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase())
-                .message(exception.getMessage())
+                .message("Unexpected error, check server log")
                 .timestamp(LocalDateTime.now())
                 .build();
 
