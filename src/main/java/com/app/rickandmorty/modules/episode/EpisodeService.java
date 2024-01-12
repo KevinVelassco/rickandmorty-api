@@ -9,7 +9,9 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 @Service
 public class EpisodeService {
+
     private final EpisodeRepository episodeRepository;
+
     private final EpisodeMapper episodeMapper;
 
     public CreateEpisodeResponse create(CreateEpisodeRequest createEpisodeRequest) {
